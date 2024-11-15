@@ -13,12 +13,12 @@ var DB *gorm.DB
 
 func ConnectDatabase() {
 	newLogger := logger.New(
-		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+		log.New(os.Stdout, "\r\n", log.LstdFlags),
 		logger.Config{
-			SlowThreshold:             time.Second, // Slow SQL threshold
-			LogLevel:                  logger.Info, // Log level
-			IgnoreRecordNotFoundError: true,        // Ignore ErrRecordNotFound error for logger
-			Colorful:                  true,        // Disable color
+			SlowThreshold:             time.Second,
+			LogLevel:                  logger.Info,
+			IgnoreRecordNotFoundError: true,
+			Colorful:                  true,
 		},
 	)
 	database, err := gorm.Open(mysql.Open("root:@tcp(127.0.0.1:3306)/books?charset=utf8&parseTime=true"), &gorm.Config{Logger: newLogger})
