@@ -31,5 +31,7 @@ func ConnectDatabase() {
 }
 
 func DBMigrate() {
-	DB.AutoMigrate(&User{}, &Author{}, &Book{}, &Order{}, &Cart{}, &Order{})
+	if err := DB.AutoMigrate(&User{}, &Author{}, &Book{}, &Order{}, &Cart{}, &Order{}); err != nil {
+		log.Fatal(err)
+	}
 }

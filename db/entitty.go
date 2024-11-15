@@ -11,6 +11,7 @@ type Book struct {
 	AuthorID  string
 	Available bool
 	Price     float64
+	Carts     []Cart `gorm:"many2many:cart_books;"`
 }
 
 type User struct {
@@ -18,14 +19,12 @@ type User struct {
 	Name     string
 	Email    string `gorm:"unique"`
 	Password string
-	Orders   []Order
 	Cart     Cart
 }
 
 type Author struct {
 	gorm.Model
-	Name  string
-	Books []Book `gorm:"foreignkey:AuthorID"`
+	Name string
 }
 
 type Cart struct {
