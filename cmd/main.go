@@ -14,7 +14,9 @@ func init() {
 func main() {
 	r := gin.Default()
 
-	userHandler := handlers.NewHandler(db.DB)
+	database := db.DB
+
+	userHandler := handlers.NewHandler(database)
 
 	r.POST("/signup", userHandler.Signup)
 
