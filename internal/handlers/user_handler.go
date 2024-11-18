@@ -106,5 +106,14 @@ func (h *UserHandler) Login(c *gin.Context) {
 }
 
 func (h *UserHandler) PlaceOrder(c *gin.Context) {
+	userId, exists := c.Get("userID")
+	if !exists {
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
 
+	OrderHandler := NewOrderHandler(h.db)
+	c.Set("userID", userId)
+
+	OrderHandler.CreateOrder(c)
 }

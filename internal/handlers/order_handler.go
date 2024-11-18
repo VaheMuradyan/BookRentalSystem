@@ -5,44 +5,57 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
+	"strconv"
 	"time"
 )
 
-type OrderHandler struct {
+type orderHandler struct {
 	db *gorm.DB
 }
 
-func NewOrderHandler(db *gorm.DB) *OrderHandler {
-	return &OrderHandler{
+func NewOrderHandler(db *gorm.DB) *orderHandler {
+	return &orderHandler{
 		db: db,
 	}
 }
 
-func (h *OrderHandler) CreateOrder(c *gin.Context) {
+func (h *orderHandler) CreateOrder(c *gin.Context) {
 	userID := c.Param("userID")
+	id, err := strconv.ParseUint(userID, 10, 32)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	var cart db.Cart
-	if result := h.db.Preload("Books").Where("user_id = ?", userID).First(&cart); result.Error != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Cart not found"})
+	if result := h.db.Preload("Books").Where("user_id = ?", uint(id)).First(&cart); result.Error != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Cart not found"})
 		return
 	}
 
 	for _, book := range cart.Books {
 		order := db.Order{
-			UserId:    cart.UserId,
+			UserId:    uint(id),
 			BookId:    book.ID,
 			OrderDate: time.Now(),
 		}
 
-		h.db.Create(&order)
+		if err := h.db.Create(&order).Error; err != nil {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Faild to create order"})
+			return
+		}
 	}
 
 	if err := h.db.Model(&cart).Association("Books").Clear(); err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Cant create order or cant cleared card"})
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": "Faild to clear card"})
 		return
 	}
+
+	c.IndentedJSON(http.StatusCreated, gin.H{"message": "Order created successfully"})
 }
 
-func (h *OrderHandler) GetOrder(c *gin.Context) {
+func (h *orderHandler) GetOrder(c *gin.Context) {
 	orderID := c.Param("orderID")
 
 	var order db.Order
@@ -54,7 +67,7 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, gin.H{"order": order})
 }
 
-func (h *OrderHandler) GetOrdersFromUser(c *gin.Context) {
+func (h *orderHandler) GetOrdersFromUser(c *gin.Context) {
 	userID := c.Param("userID")
 
 	var orders []db.Order
@@ -66,7 +79,7 @@ func (h *OrderHandler) GetOrdersFromUser(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, gin.H{"orders": orders})
 }
 
-func (h *OrderHandler) ReturnBook(c *gin.Context) {
+func (h *orderHandler) ReturnBook(c *gin.Context) {
 	orderID := c.Param("orderID")
 
 	var order db.Order
